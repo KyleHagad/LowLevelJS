@@ -15,7 +15,44 @@ const updateParserError = (state, errorMessage) => ({
 	error: errorMessage,
 });
 
-const str = s => parserState => {
+class Parser {
+	constructor(parserStateTransformer) {
+		this.parserStateTransformer = parserStateTransformer;
+	}
+
+	run(targetString) {
+		const initState = {
+			targetString,
+			index  :0,
+			result :null,
+			isError:false,
+			error  :null
+		};
+		return this.parserStateTransformer(initState);
+	}
+
+	map(func) {
+		return new Parser(parserState => {
+			const nextState = this.parserStateTransformer(parserState);
+
+			if (nextState.isError) return nextState;
+
+			return updateParserResult(nextState, func(nextState.result));
+		});
+	}
+
+	errorMap(func) {
+		return new Parser(parserState => {
+			const nextState = this.parserStateTransformer(parserState);
+
+			if (!nextState.isError) return nextState;
+
+			return updateParserError(nextState, func(nextState.error, nextState.index));
+		});
+	}
+}
+
+const str = s => new Parser(parserState => {
 	const {
 		targetString,
 		index,
@@ -37,37 +74,28 @@ const str = s => parserState => {
 		parserState,
 		`Failed to find ${s}, Instead found ${targetString.slice(index, index + 10)}`
 	);
-};
+});
 
-const sequenceOf = parsers => parserState => {
+const sequenceOf = parsers => new Parser(parserState => {
 	if(parserState.isError) { return parserState }
 	const results = [];
 	let nextState = parserState;
 
 	for (let p of parsers) {
-		nextState = p(nextState);
+		nextState = p.parserStateTransformer(nextState);
 		results.push(nextState.result);
 	}
 
 	return updateParserResult(nextState, results);
-};
+});
 
 // shape of functional flow can be summarized as ` ParserState IN >-> ParserState OUT `
-const run = (parser, targetString) => {
-	const initState = {
-		targetString,
-		index: 0,
-		result: null,
-		isError: false,
-		error: null
-	};
-	return parser(initState);
-};
-
 // Parsing at work
-const parser = sequenceOf([
-	str('hello there'),
-	str('goodbye'),
-	]);
+const parser = str('hello there')
+	.map(result => ({
+		value: result.toUpperCase()
+	})
+	//.errorMap((msg, index) => `Expected a greeting at index ${index}`)
+);
 
-console.log(run(parser, ''));
+console.log(parser.run('hello theregoodbye'));
