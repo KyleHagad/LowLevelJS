@@ -40,6 +40,17 @@ class Parser {
 		});
 	}
 
+	chain(func) {
+		return new Parser(parserState => {
+			const nextState = this.parserStateTransformer(parserState);
+
+			if (nextState.isError) return nextState;
+
+			const nextParser = func(nextState.result);
+			return nextParser.parserStateTransformer(nextState);
+		});
+	}
+
 	errorMap(func) {
 		return new Parser(parserState => {
 			const nextState = this.parserStateTransformer(parserState);
@@ -199,10 +210,92 @@ const manyOne = parser => new Parser(parserState => {
 	return updateParserResult(nextState,results);
 });
 
-// Parsing at work
-const parser = many(choice([
-	digits,
-	letters
-]));
+const separateBy = separatorParser => valueParser => new Parser(parserState => {
+	const results = [];
+	let nextState = parserState;
 
-console.log(parser.run('123123asdasd'));
+	while(true) {
+		const targetItemState = valueParser.parserStateTransformer(nextState);
+		if(targetItemState.isError) { break; }
+		results.push(targetItemState.result);
+		nextState = targetItemState;
+
+		const separatorState = separatorParser.parserStateTransformer(nextState);
+		if(separatorState.isError) { break; }
+		nextState = separatorState;
+	}
+
+	return updateParserResult(nextState, results);
+});
+
+const separateByOne = separatorParser => valueParser => new Parser(parserState => {
+	const results = [];
+	let nextState = parserState;
+
+	while(true) {
+		const targetItemState = valueParser.parserStateTransformer(nextState);
+		if(targetItemState.isError) { break; }
+
+		results.push(targetItemState.result);
+		nextState = targetItemState;
+
+		const separatorState = separatorParser.parserStateTransformer(nextState);
+		if(separatorState.isError) { break; }
+
+		nextState = separatorState;
+	}
+
+	if(results.length < 1) {
+		return updateParserError(
+			parserState,
+			`separateByOne: Failed to capture results from index ${parserState.index}`
+		);
+	}
+
+	return updateParserResult(nextState, results);
+});
+
+
+const // Playful Parsing examples
+	stringParser = letters.map(result => ({
+		type: 'string',
+		value: result
+	})),
+	numberParser = digits.map(result => ({
+		type: 'number',
+		value: Number(result)
+	})),
+	dicerollParser = sequenceOf([
+		digits,
+		str('d'),
+		digits
+	]).map(([n, _, s]) => ({
+		type: 'diceroll',
+		value: [Number(n), Number(s)]
+	}));
+
+const between = (leftParser, rightParser) => contentParser => sequenceOf([
+	leftParser,
+	contentParser,
+	rightParser
+]).map(results => results[1]);
+
+const lazy = parserThunk => new Parser(parserState => {
+	const parser = parserThunk();
+	return parser.parserStateTransformer(parserState);
+});
+const
+	betweenParens = between(str('('), str(')')),
+	betweenCurlys = between(str('{'), str('}')),
+	betweenBraces = between(str('['), str(']'));
+const commaSeparator = separateBy(str(','));
+
+const value = lazy(() => choice( [digits,arrayParser] ));
+
+const arrayParser = betweenBraces(commaSeparator(value));
+
+const exampleString = '[1,[2,[3],4],5]';
+
+// Parsing at work
+
+console.log(arrayParser.run('[1,[2,[3],4],5]'));
