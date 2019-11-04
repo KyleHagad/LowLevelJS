@@ -76,6 +76,58 @@ const str = s => new Parser(parserState => {
 	);
 });
 
+const lettersRegex = /[A-Za-z]+/;
+const letters = new Parser(parserState => {
+	const {
+		targetString,
+		index,
+		isError,
+	} = parserState;
+
+	if(isError) { return parserState }
+
+	const slicedTarget = targetString.slice(index);
+	if (slicedTarget.length === 0) {
+		return updateParserError(parserState, `letters: Found unexpected end of input.`);
+	}
+
+	const regexMatch = slicedTarget.match(lettersRegex);
+	if(regexMatch) {
+		return updateParserState(parserState, index + regexMatch[0].length, regexMatch[0]);
+	}
+
+	return updateParserError(
+		parserState,
+		`letters: Failed to match at index ${index}`
+	);
+});
+
+const digitsRegex = /[0-9]+/;
+const digits = new Parser(parserState => {
+	const {
+		targetString,
+		index,
+		isError,
+	} = parserState;
+
+	if(isError) { return parserState }
+
+	const slicedTarget = targetString.slice(index);
+	if (slicedTarget.length === 0) {
+		return updateParserError(parserState, `digits: Found unexpected end of input.`);
+	}
+
+	const regexMatch = slicedTarget.match(digitsRegex);
+	if(regexMatch) {
+		return updateParserState(parserState, index + regexMatch[0].length, regexMatch[0]);
+	}
+
+	return updateParserError(
+		parserState,
+		`digits: Failed to match at index ${index}`
+	);
+});
+
 const sequenceOf = parsers => new Parser(parserState => {
 	if(parserState.isError) { return parserState }
 	const results = [];
@@ -91,11 +143,6 @@ const sequenceOf = parsers => new Parser(parserState => {
 
 // shape of functional flow can be summarized as ` ParserState IN >-> ParserState OUT `
 // Parsing at work
-const parser = str('hello there')
-	.map(result => ({
-		value: result.toUpperCase()
-	})
-	//.errorMap((msg, index) => `Expected a greeting at index ${index}`)
-);
+const parser = digits;
 
-console.log(parser.run('hello theregoodbye'));
+console.log(parser.run('12312312 theregoodbye'));
