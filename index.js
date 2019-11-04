@@ -1,15 +1,14 @@
-const updateParserState = (state, index, result) => ({
+const // Utilities
+	updateParserState = (state, index, result) => ({
 	...state,
 		index,
 		result,
-});
-
-const updateParserResult = (state, result) => ({
+}),
+	updateParserResult = (state, result) => ({
 	...state,
 		result,
-});
-
-const updateParserError = (state, errorMessage) => ({
+}),
+	updateParserError = (state, errorMessage) => ({
 	...state,
 	isError: true,
 	error: errorMessage,
@@ -52,6 +51,7 @@ class Parser {
 	}
 }
 
+// shape of functional flow can be summarized as ` ParserState IN >-> ParserState OUT `
 const str = s => new Parser(parserState => {
 	const {
 		targetString,
@@ -141,8 +141,68 @@ const sequenceOf = parsers => new Parser(parserState => {
 	return updateParserResult(nextState, results);
 });
 
-// shape of functional flow can be summarized as ` ParserState IN >-> ParserState OUT `
-// Parsing at work
-const parser = digits;
+const choice = parsers => new Parser(parserState => {
+	if(parserState.isError) { return parserState }
 
-console.log(parser.run('12312312 theregoodbye'));
+	for (let p of parsers) {
+		const nextState = p.parserStateTransformer(parserState);
+		if(!nextState.isError) { return nextState; }
+	}
+
+	return updateParserError(
+		parserState,
+		`choice: Unable to match any parser at index ${parserState.index}`
+	);
+});
+
+const many = parser => new Parser(parserState => {
+	if(parserState.isError) { return parserState }
+
+	let nextState = parserState;
+	let done = false;
+	const results = [];
+
+	while (!done) {
+		let testState = parser.parserStateTransformer(nextState);
+
+		if(!testState.isError) {
+			results.push(testState.result);
+			nextState = testState;
+		}
+		else { done = true; }
+	}
+
+	return updateParserResult(nextState, results);
+});
+
+const manyOne = parser => new Parser(parserState => {
+	if(parserState.isError) { return parserState }
+
+	let nextState = parserState;
+	let done = false;
+	const results = [];
+
+	while (!done) {
+		nextState = parser.parserStateTransformer(nextState);
+
+		if(!nextState.isError) { results.push(nextState.result); }
+		else { done = true; }
+	}
+
+	if(results.length < 1) {
+		return updateParserError(
+			parserState,
+			`manyOne: Failed to match any parser at index ${parserState.index}`
+		)
+	}
+
+	return updateParserResult(nextState,results);
+});
+
+// Parsing at work
+const parser = many(choice([
+	digits,
+	letters
+]));
+
+console.log(parser.run('123123asdasd'));
