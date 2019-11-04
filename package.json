@@ -1,0 +1,24 @@
+{
+  "name": "lowleveljs",
+  "version": "1.0.0",
+  "description": "Low Lovel JavaScript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KyleHagad/LowLevelJS.git"
+  },
+  "keywords": [
+    "parse",
+    "parsing",
+    "combintor"
+  ],
+  "author": "K.Hagadorn",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KyleHagad/LowLevelJS/issues"
+  },
+  "homepage": "https://github.com/KyleHagad/LowLevelJS#readme"
+}

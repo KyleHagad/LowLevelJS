@@ -1,0 +1,3 @@
+const str = s => targetString => {
+
+};
