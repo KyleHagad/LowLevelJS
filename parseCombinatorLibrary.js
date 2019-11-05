@@ -19,9 +19,9 @@ class Parser {
 		this.parserStateTransformer = parserStateTransformer;
 	}
 
-	run(targetString) {
+	run(target) {
 		const initState = {
-			targetString,
+			target,
 			index  :0,
 			result :null,
 			isError:false,
@@ -59,14 +59,14 @@ class Parser {
 // shape of functional flow can be summarized as ` ParserState IN >-> ParserState OUT `
 const str = s => new Parser(parserState => {
 	const {
-		targetString,
+		target,
 		index,
 		isError,
 	} = parserState;
 
 	if(isError) { return parserState }
 
-	const slicedTarget = targetString.slice(index);
+	const slicedTarget = target.slice(index);
 	if (slicedTarget.length === 0) {
 		return updateParserError(parserState, `str: Failed to find "${s}". Found unexpected end of input.`);
 	}
@@ -76,21 +76,21 @@ const str = s => new Parser(parserState => {
 	}
 
 	return updateParserError(
-		parserState, `str: Failed to find ${s}, Instead found ${targetString.slice(index, index + 10)}`
+		parserState, `str: Failed to find ${s}, Instead found ${target.slice(index, index + 10)}`
 	);
 });
 
 const lettersRegex = /^[A-Za-z]+/;
 const letters = new Parser(parserState => {
 	const {
-		targetString,
+		target,
 		index,
 		isError,
 	} = parserState;
 
 	if(isError) { return parserState }
 
-	const slicedTarget = targetString.slice(index);
+	const slicedTarget = target.slice(index);
 	if (slicedTarget.length === 0) {
 		return updateParserError(parserState, `letters: Found unexpected end of input.`);
 	}
@@ -106,14 +106,14 @@ const letters = new Parser(parserState => {
 const digitsRegex = /^[0-9]+/;
 const digits = new Parser(parserState => {
 	const {
-		targetString,
+		target,
 		index,
 		isError,
 	} = parserState;
 
 	if(isError) { return parserState }
 
-	const slicedTarget = targetString.slice(index);
+	const slicedTarget = target.slice(index);
 	if (slicedTarget.length === 0) {
 		return updateParserError(parserState, `digits: Found unexpected end of input.`);
 	}
@@ -123,10 +123,7 @@ const digits = new Parser(parserState => {
 		return updateParserState(parserState, index + regexMatch[0].length, regexMatch[0]);
 	}
 
-	return updateParserError(
-		parserState,
-		`digits: Failed to match at index ${index}`
-	);
+	return updateParserError(	parserState, `digits: Failed to match at index ${index}` );
 });
 
 const sequenceOf = parsers => new Parser(parserState => {
@@ -138,6 +135,7 @@ const sequenceOf = parsers => new Parser(parserState => {
 		nextState = p.parserStateTransformer(nextState);
 		results.push(nextState.result);
 	}
+	if(nextState.isError) { return nextState }
 
 	return updateParserResult(nextState, results);
 });
@@ -201,6 +199,7 @@ const manyOne = parser => new Parser(parserState => {
 });
 
 const separateBy = separatorParser => valueParser => new Parser(parserState => {
+	if(parserState.isError) { return parserState }
 	const results = [];
 	let nextState = parserState;
 
@@ -219,6 +218,7 @@ const separateBy = separatorParser => valueParser => new Parser(parserState => {
 });
 
 const separateByOne = separatorParser => valueParser => new Parser(parserState => {
+	if(parserState.isError) { return parserState }
 	const results = [];
 	let nextState = parserState;
 
@@ -231,7 +231,6 @@ const separateByOne = separatorParser => valueParser => new Parser(parserState =
 
 		const separatorState = separatorParser.parserStateTransformer(nextState);
 		if(separatorState.isError) { break; }
-
 		nextState = separatorState;
 	}
 
@@ -301,4 +300,10 @@ module.exports = {
 	separateByOne,
 	between,
 	lazy,
+
+	betweenParens, betweenCurlys, betweenBraces,
+	commaSeparator,
+
+	updateParserState, updateParserResult, updateParserError,
+	Parser
 };

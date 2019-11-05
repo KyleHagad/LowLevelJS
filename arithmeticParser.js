@@ -5,7 +5,7 @@ const {
 	choice,
 	between,
 	sequenceOf,
-} = require('./index');
+} = require('./parseCombinatorLibrary');
 
 const betweenParens = between(str('('), str(')'));
 
