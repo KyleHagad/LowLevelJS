@@ -264,28 +264,41 @@ const // Playful Parsing examples
 		value: [Number(n), Number(s)]
 	}));
 
+
+const lazy = parserThunk => new Parser(parserState => { // The parser thunk allows us to get around JS's 'eagerness'
+	const parser = parserThunk();
+	return parser.parserStateTransformer(parserState);
+});
 const between = (leftParser, rightParser) => contentParser => sequenceOf([
 	leftParser,
 	contentParser,
 	rightParser
 ]).map(results => results[1]);
-
-const lazy = parserThunk => new Parser(parserState => {
-	const parser = parserThunk();
-	return parser.parserStateTransformer(parserState);
-});
 const
 	betweenParens = between(str('('), str(')')),
 	betweenCurlys = between(str('{'), str('}')),
 	betweenBraces = between(str('['), str(']'));
 const commaSeparator = separateBy(str(','));
 
-const value = lazy(() => choice( [digits,arrayParser] ));
-
-const arrayParser = betweenBraces(commaSeparator(value));
-
-const exampleString = '[1,[2,[3],4],5]';
-
+//const value = lazy(() => choice( [digits,arrayParser] ));
+//
+//const arrayParser = betweenBraces(commaSeparator(value));
+//
+//const exampleString = '[1,[2,[3],4],5]';
+//
 // Parsing at work '[1,2,3,4,5]'
-
-console.log(arrayParser.run(exampleString));
+//
+//console.log(arrayParser.run(exampleString));
+module.exports = {
+	str,
+	letters,
+	digits,
+	sequenceOf,
+	choice,
+	many,
+	manyOne,
+	separateBy,
+	separateByOne,
+	between,
+	lazy,
+};
