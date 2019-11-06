@@ -1,7 +1,7 @@
 {
-  "name": "lowleveljs",
-  "version": "1.0.0",
-  "description": "Low Lovel JavaScript",
+  "name": "parsercombinatorsfromlowleveljs",
+  "version": "1.1.1",
+  "description": "Parser combinators from lo level JavaScript. Includes parsing for String, Char, Num, Uint, Int, Bit, IP headers, and more.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

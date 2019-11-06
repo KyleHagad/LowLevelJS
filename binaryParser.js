@@ -125,9 +125,5 @@ const ipV4HeaderParser = sequenceOf([
 
 const file = fs.readFileSync(path.join(__dirname, './packet.bin')).buffer;
 const dataView = new DataView(file);
-debugger;
-
-// const parser = RawString("Hifa!");
-// const data = (new Uint8Array("Hiya!".split('').map(character => character.charCodeAt(0)))).buffer;
 const res = ipV4HeaderParser.run(dataView);
 console.log(res);
