@@ -244,6 +244,29 @@ const separateByOne = separatorParser => valueParser => new Parser(parserState =
 	return updateParserResult(nextState, results);
 });
 
+const lazy = parserThunk => new Parser(parserState => { // The parser thunk allows us to get around JS's 'eagerness'
+	const parser = parserThunk();
+	return parser.parserStateTransformer(parserState);
+});
+
+const fail = errorMsg => new Parser(parserState => {
+	return updateParserError(parserState, errorMsg)
+});
+
+const succeed = value => new Parser(parserState => {
+	return updateParserResult(parserState, value)
+});
+
+const between = (leftParser, rightParser) => contentParser => sequenceOf([
+	leftParser,
+	contentParser,
+	rightParser
+]).map(results => results[1]);
+const
+	betweenParens = between(str('('), str(')')),
+	betweenCurlys = between(str('{'), str('}')),
+	betweenBraces = between(str('['), str(']'));
+const commaSeparator = separateBy(str(','));
 
 const // Playful Parsing examples
 	stringParser = letters.map(result => ({
@@ -264,20 +287,6 @@ const // Playful Parsing examples
 	}));
 
 
-const lazy = parserThunk => new Parser(parserState => { // The parser thunk allows us to get around JS's 'eagerness'
-	const parser = parserThunk();
-	return parser.parserStateTransformer(parserState);
-});
-const between = (leftParser, rightParser) => contentParser => sequenceOf([
-	leftParser,
-	contentParser,
-	rightParser
-]).map(results => results[1]);
-const
-	betweenParens = between(str('('), str(')')),
-	betweenCurlys = between(str('{'), str('}')),
-	betweenBraces = between(str('['), str(']'));
-const commaSeparator = separateBy(str(','));
 
 //const value = lazy(() => choice( [digits,arrayParser] ));
 //
@@ -290,16 +299,14 @@ const commaSeparator = separateBy(str(','));
 //console.log(arrayParser.run(exampleString));
 module.exports = {
 	str,
-	letters,
-	digits,
+	letters, digits,
 	sequenceOf,
 	choice,
-	many,
-	manyOne,
-	separateBy,
-	separateByOne,
+	many, manyOne,
+	separateBy, separateByOne,
 	between,
 	lazy,
+	fail,	succeed,
 
 	betweenParens, betweenCurlys, betweenBraces,
 	commaSeparator,
